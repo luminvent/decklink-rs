@@ -6,9 +6,7 @@ mod video_callback;
 
 use crate::device::output::device::DecklinkOutputDevicePtr;
 use crate::device::output::video_callback::register_callback;
-use crate::display_mode::{
-    iterate_display_modes, DecklinkDisplayMode, DecklinkDisplayModeId,
-};
+use crate::display_mode::{iterate_display_modes, DecklinkDisplayMode, DecklinkDisplayModeId};
 use crate::frame::DecklinkPixelFormat;
 use crate::{sdk, SdkError};
 use num_traits::FromPrimitive;
@@ -35,7 +33,7 @@ impl DecklinkDeviceDisplayModes<enums::DecklinkVideoOutputFlags> for DecklinkOut
         &self,
         mode: DecklinkDisplayModeId,
         pixel_format: DecklinkPixelFormat,
-        flags: enums::DecklinkVideoOutputFlags,
+        flags: DecklinkVideoOutputFlags,
     ) -> Result<(bool, Option<DecklinkDisplayModeId>), SdkError> {
         let mut supported = false;
         let mut display_mode_id: u32 = 0;

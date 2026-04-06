@@ -1,5 +1,5 @@
-use std::ffi::CStr;
 use num_traits::FromPrimitive;
+use std::ffi::CStr;
 
 // TODO - refactor the error type to abstract away weird errors?
 #[derive(Debug, FromPrimitive)]

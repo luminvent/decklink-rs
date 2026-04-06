@@ -168,8 +168,8 @@ fn main() {
             // Register for notification changes
             // The registration is only valid for as long as handle is alive
             let _handle = notification
-              .subscribe(NotificationTopic::StatusChanged, callback.clone())
-              .expect("Failed to subscribe to notifications");
+                .subscribe(NotificationTopic::StatusChanged, callback.clone())
+                .expect("Failed to subscribe to notifications");
 
             println!("Press enter to continue");
             let _s: String = read!();

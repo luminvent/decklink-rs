@@ -5,9 +5,7 @@ mod video_callback;
 use crate::allocator::{create_c_allocator_provider, VideoBufferAllocatorProvider};
 use crate::device::input::device::DecklinkInputDevicePtr;
 use crate::device::input::video_callback::{register_input_callback, InputCallbackWrapper};
-use crate::display_mode::{
-    iterate_display_modes, DecklinkDisplayMode, DecklinkDisplayModeId,
-};
+use crate::display_mode::{iterate_display_modes, DecklinkDisplayMode, DecklinkDisplayModeId};
 use crate::frame::DecklinkPixelFormat;
 use crate::{sdk, SdkError};
 use num_traits::FromPrimitive;
@@ -272,12 +270,7 @@ impl Drop for DecklinkInputDevice {
             // Clear the callback to release the C++ side reference
             if !self.callback_wrapper.is_null() {
                 // Set a null callback to ensure no more callbacks fire
-                sdk::cdecklink_input_set_callback(
-                    self.ptr.dev,
-                    null_mut(),
-                    None,
-                    None,
-                );
+                sdk::cdecklink_input_set_callback(self.ptr.dev, null_mut(), None, None);
                 drop(Box::from_raw(self.callback_wrapper));
                 self.callback_wrapper = null_mut();
             }

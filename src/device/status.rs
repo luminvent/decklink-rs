@@ -13,7 +13,8 @@ pub struct DecklinkDeviceStatus {
 pub enum DecklinkStatusId {
     /// The detected video input mode (BMDDisplayMode), available on devices which support input format detection.
     DetectedVideoInputMode = sdk::_DecklinkStatusID_decklinkStatusDetectedVideoInputMode as isize,
-    DetectedVideoInputFlags = sdk::_DecklinkStatusID_decklinkStatusDetectedVideoInputFormatFlags as isize,
+    DetectedVideoInputFlags =
+        sdk::_DecklinkStatusID_decklinkStatusDetectedVideoInputFormatFlags as isize,
     /// The current video input mode (BMDDisplayMode).
     CurrentVideoInputMode = sdk::_DecklinkStatusID_decklinkStatusCurrentVideoInputMode as isize,
     /// The current video input pixel format (BMDPixelFormat).
@@ -60,7 +61,6 @@ bitflags! {
         const DUAL_STREAM_3D = sdk::_DecklinkVideoStatusFlags_decklinkVideoStatusDualStream3D;
     }
 }
-
 
 impl Drop for DecklinkDeviceStatus {
     fn drop(&mut self) {
