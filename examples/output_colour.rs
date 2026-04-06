@@ -83,7 +83,11 @@ fn main() {
             DecklinkFrameFlags::empty(),
         ));
 
-        let bytes = vec![120u8; (mode.width() * mode.height() * 4) as usize];
+        let mut bytes = vec![0u8; mode.width() * mode.height() * 4];
+        for index in 0..mode.width() * mode.height() {
+            bytes[index * 4 + 2] = 255u8;
+        }
+
         if frame.copy_bytes(&bytes).is_err() {
             println!("Failed to set frame bytes");
             return;

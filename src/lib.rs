@@ -23,8 +23,8 @@ pub mod display_mode;
 pub mod frame;
 mod util;
 
-#[cfg(feature = "cuda")]
-pub mod cuda;
+// #[cfg(feature = "cuda")]
+// pub mod cuda;
 
 use std::ptr::null;
 use util::convert_and_release_c_string;

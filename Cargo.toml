@@ -16,23 +16,26 @@ exclude = [
 
 [features]
 default = []
-cuda = ["cudarc"]
+#cuda = ["cudarc"]
 
 [dependencies]
 num-traits = "0.2"
 num-derive = "0.4"
 bitflags = "2.0"
-strum = "0.25"
-strum_macros = "0.25"
-aligned-vec = "0.5"
+strum = "0.28"
+strum_macros = "0.28"
+aligned-vec = "0.6"
 cudarc = { version = "0.19.3", optional = true, features = [ "cuda-version-from-build-system" ] }
+
+core-foundation = "0.10"
+core-foundation-sys = "0.8.7"
 
 [build-dependencies]
 cmake = "0.1"
 
 [dev-dependencies]
 text_io = "0.1"
-cudarc = { version = "0.19.3", features = ["cuda-version-from-build-system"] }
+#cudarc = { version = "0.19.3", features = ["cuda-version-from-build-system"], optional=true }
 
 [[example]]
 name = "cuda_capture"

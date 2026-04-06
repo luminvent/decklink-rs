@@ -47,18 +47,17 @@ fn select_output_and_format() -> Option<(DecklinkDevice, DecklinkOutputDevice, D
             .unwrap_or_else(|| "Unknown".to_string())
     );
 
-    let output = match device.output() {
-        None => {
-            println!("Failed to create device output");
-            return None;
-        }
-        Some(o) => o,
-    };
+    if device.output().is_none() {
+        println!("Failed to create device output");
+    }
+
+    let output = device.output()?;
 
     let mode = {
         let mut supported_modes = output
             .display_modes()
             .expect("Failed to list display modes");
+
         for i in 0..supported_modes.len() {
             println!(
                 "{}: {}",
@@ -90,11 +89,12 @@ impl DeckLinkVideoOutputCallback for CompletionCallback {
     ) -> bool {
         println!("Frame completed");
         sleep(Duration::from_millis(100));
-        return true;
+        true
     }
+
     fn playback_stopped(&self) -> bool {
         println!("Playback stopped");
-        return true;
+        true
     }
 }
 

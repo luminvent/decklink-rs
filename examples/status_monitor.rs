@@ -123,7 +123,12 @@ fn print_line(id: DecklinkStatusId, value: String) {
 
 fn main() {
     let devices = get_devices()
-        .expect("Unable to list Decklink devices. The Decklink drivers may not be insalled.");
+        .expect("Unable to list Decklink devices. The Decklink drivers may not be installed.");
+
+    if devices.is_empty() {
+        println!("No Decklink devices found.");
+        return;
+    }
     //    let device = devices.first().expect("Could not find any Decklink devices");
     let device = &devices[0];
 
@@ -154,22 +159,25 @@ fn main() {
     print_status(&status, DecklinkStatusId::ReferenceSignalMode);
     print_status(&status, DecklinkStatusId::ReceivedEDID);
 
-    let notification = device
-        .get_notification()
-        .expect("Could not obtain Decklink notification object");
+    match device.get_notification() {
+        Ok(notification) => {
+            let callback = Arc::new(NotificationCallback {
+                status: status.clone(),
+            });
 
-    let callback = Arc::new(NotificationCallback {
-        status: status.clone(),
-    });
+            // Register for notification changes
+            // The registration is only valid for as long as handle is alive
+            let _handle = notification
+              .subscribe(NotificationTopic::StatusChanged, callback.clone())
+              .expect("Failed to subscribe to notifications");
 
-    // Register for notification changes
-    // The registration is only valid for as long as handle is alive
-    let _handle = notification
-        .subscribe(NotificationTopic::StatusChanged, callback.clone())
-        .expect("Failed to subscribe to notifications");
-
-    println!("Press enter to continue");
-    let _s: String = read!();
+            println!("Press enter to continue");
+            let _s: String = read!();
+        }
+        Err(error) => {
+            println!("Could not obtain Decklink notification object: {:?}", error);
+        }
+    }
 
     // Cleanup happens during object destruction
 }

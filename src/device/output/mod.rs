@@ -113,25 +113,23 @@ impl DecklinkOutputDevice {
         flags: enums::DecklinkVideoOutputFlags,
         timescale: i64,
     ) -> Result<Box<dyn DecklinkOutputDeviceVideoScheduled>, SdkError> {
-        match register_callback(&self.ptr) {
-            // Don't do this if already running?
-            Err(e) => Err(e),
-            Ok(wrapper) => {
-                // TODO - this leaks on error
-                let result = unsafe { self.enable_video_output_inner(mode, flags) };
-                SdkError::result_or_else(result, || {
-                    let r: Box<dyn DecklinkOutputDeviceVideoScheduled> = Box::new(
-                        DecklinkOutputDeviceVideoImpl::from(&self.ptr, wrapper, timescale),
-                    );
-                    r
-                })
-            }
-        }
+        // Don't do this if already running?
+        let wrapper = register_callback(&self.ptr)?;
+
+        // TODO - this leaks on error
+        let result = unsafe { self.enable_video_output_inner(mode, flags) };
+        SdkError::result_or_else(result, || {
+            let r: Box<dyn DecklinkOutputDeviceVideoScheduled> = Box::new(
+                DecklinkOutputDeviceVideoImpl::from(&self.ptr, wrapper, timescale),
+            );
+            r
+        })
     }
+
     pub fn enable_video_output_sync(
         &self,
         mode: DecklinkDisplayModeId,
-        flags: enums::DecklinkVideoOutputFlags,
+        flags: DecklinkVideoOutputFlags,
     ) -> Result<Box<dyn DecklinkOutputDeviceVideoSync>, SdkError> {
         let result = unsafe { self.enable_video_output_inner(mode, flags) };
         SdkError::result_or_else(result, || {
@@ -146,10 +144,10 @@ impl DecklinkOutputDevice {
 
     pub fn enable_audio_output(
         &self,
-        sample_rate: enums::DecklinkAudioSampleRate,
-        sample_type: enums::DecklinkAudioSampleType,
+        sample_rate: DecklinkAudioSampleRate,
+        sample_type: DecklinkAudioSampleType,
         channels: u32,
-        stream_type: enums::DecklinkAudioOutputStreamType,
+        stream_type: DecklinkAudioOutputStreamType,
     ) -> Result<DecklinkOutputDeviceAudio, SdkError> {
         if self.ptr.audio_active.swap(true, Ordering::Relaxed) {
             // TODO - better mode
