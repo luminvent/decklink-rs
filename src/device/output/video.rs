@@ -95,7 +95,9 @@ impl DecklinkOutputDeviceVideoSync for DecklinkOutputDeviceVideoImpl {
     }
 
     fn display_custom_frame(&self, frame: Box<dyn DecklinkFrameBase2>) -> Result<(), SdkError> {
-        let mut decklink_frame = WrappedCustomFrame { ptr: std::ptr::null_mut() };
+        let mut decklink_frame = WrappedCustomFrame {
+            ptr: std::ptr::null_mut(),
+        };
         let result = unsafe {
             sdk::cdecklink_custom_video_frame_create_frame(
                 frame.width() as i64,
