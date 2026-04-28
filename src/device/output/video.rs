@@ -2,7 +2,6 @@ use crate::device::output::video_callback::{CallbackWrapper, DeckLinkVideoOutput
 use crate::device::output::DecklinkOutputDevicePtr;
 use crate::frame::{DecklinkAlignedVec, DecklinkFrameBase, DecklinkFrameBase2};
 use crate::{sdk, SdkError};
-use std::ptr::null_mut;
 use std::rc::Rc;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -60,7 +59,7 @@ impl Drop for DecklinkOutputDeviceVideoImpl {
 
             if !self.callback_wrapper.is_null() {
                 drop(Box::from_raw(self.callback_wrapper)); // Reclaim the box so it gets freed
-                self.callback_wrapper = null_mut();
+                self.callback_wrapper = std::ptr::null_mut();
             }
         }
     }
@@ -96,7 +95,7 @@ impl DecklinkOutputDeviceVideoSync for DecklinkOutputDeviceVideoImpl {
     }
 
     fn display_custom_frame(&self, frame: Box<dyn DecklinkFrameBase2>) -> Result<(), SdkError> {
-        let mut decklink_frame = WrappedCustomFrame { ptr: null_mut() };
+        let mut decklink_frame = WrappedCustomFrame { ptr: std::ptr::null_mut() };
         let result = unsafe {
             sdk::cdecklink_custom_video_frame_create_frame(
                 frame.width() as i64,
@@ -263,7 +262,7 @@ impl DecklinkOutputDeviceVideoImpl {
         &self,
         frame: &dyn DecklinkFrameBase,
     ) -> Result<WrappedSdkFrame, SdkError> {
-        let mut c_frame = null_mut();
+        let mut c_frame = std::ptr::null_mut();
         unsafe {
             let res = sdk::cdecklink_output_create_video_frame(
                 self.ptr.dev,
@@ -296,7 +295,7 @@ impl Drop for WrappedSdkFrame {
             unsafe {
                 sdk::cdecklink_video_frame_release(self.ptr);
             }
-            self.ptr = null_mut();
+            self.ptr = std::ptr::null_mut();
         }
     }
 }
@@ -310,7 +309,7 @@ impl Drop for WrappedCustomFrame {
             unsafe {
                 sdk::cdecklink_custom_video_frame_release(self.ptr);
             }
-            self.ptr = null_mut();
+            self.ptr = std::ptr::null_mut();
         }
     }
 }
