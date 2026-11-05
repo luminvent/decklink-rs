@@ -19,9 +19,43 @@ impl DecklinkOutputDeviceAudio {
     pub(crate) fn from(ptr: &Rc<DecklinkOutputDevicePtr>) -> DecklinkOutputDeviceAudio {
         DecklinkOutputDeviceAudio { ptr: ptr.clone() }
     }
-    //    pub fn write_audio_samples_sync(&self, )
-    //    HRESULT cdecklink_output_write_audio_samples_sync(cdecklink_output_t *output, void *buffer,
-    //    uint32_t sampleFrameCount, uint32_t *sampleFramesWritten);
+    pub fn write_audio_samples_sync(
+        &self,
+        buffer: &[i16],
+        sample_frame_count: u32,
+    ) -> Result<u32, SdkError> {
+        unsafe {
+            let mut samples_written = 0u32;
+            let result = sdk::cdecklink_output_write_audio_samples_sync(
+                self.ptr.dev,
+                buffer.as_ptr() as *mut std::ffi::c_void,
+                sample_frame_count,
+                &mut samples_written,
+            );
+            SdkError::result_or(result, samples_written)
+        }
+    }
+
+    pub fn schedule_audio_samples(
+        &self,
+        buffer: &[i16],
+        sample_frame_count: u32,
+        stream_time: i64,
+        time_scale: i64,
+    ) -> Result<u32, SdkError> {
+        unsafe {
+            let mut samples_written = 0u32;
+            let result = sdk::cdecklink_output_schedule_audio_samples(
+                self.ptr.dev,
+                buffer.as_ptr() as *mut std::ffi::c_void,
+                sample_frame_count,
+                stream_time,
+                time_scale,
+                &mut samples_written,
+            );
+            SdkError::result_or(result, samples_written)
+        }
+    }
 
     pub fn begin_audio_preroll(&self) -> Result<(), SdkError> {
         unsafe {
@@ -35,10 +69,6 @@ impl DecklinkOutputDeviceAudio {
             SdkError::result(result)
         }
     }
-
-    //    HRESULT cdecklink_output_schedule_audio_samples(cdecklink_output_t *output, void *buffer,
-    //    uint32_t sampleFrameCount, int64_t streamTime,
-    //    int64_t timeScale, uint32_t *sampleFramesWritten);
 
     pub fn buffered_audio_sample_frame_count(&self) -> Result<u32, SdkError> {
         unsafe {
