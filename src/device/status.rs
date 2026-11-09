@@ -1,6 +1,6 @@
 use crate::display_mode::DecklinkDisplayModeId;
 use crate::frame::DecklinkPixelFormat;
-use crate::{sdk, SdkError};
+use crate::{SdkError, sdk};
 use num_traits::FromPrimitive;
 use std::os::raw::c_void;
 use std::ptr::null_mut;

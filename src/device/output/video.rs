@@ -1,12 +1,12 @@
-use crate::device::output::video_callback::{
-    unregister_callback, CallbackWrapper, DeckLinkVideoOutputCallback,
-};
 use crate::device::output::DecklinkOutputDevicePtr;
+use crate::device::output::video_callback::{
+    CallbackWrapper, DeckLinkVideoOutputCallback, unregister_callback,
+};
 use crate::frame::{DecklinkAlignedVec, DecklinkFrameBase, DecklinkFrameBase2};
-use crate::{sdk, SdkError};
+use crate::{SdkError, sdk};
 use std::rc::Rc;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 pub trait DecklinkOutputDeviceVideo {}
 pub trait DecklinkOutputDeviceVideoSync: DecklinkOutputDeviceVideo {
@@ -358,7 +358,7 @@ unsafe extern "C" fn free_vec(
     _ptr: *mut ::std::os::raw::c_void,
     context: *mut ::std::os::raw::c_void,
 ) {
-    let wrapper = Box::from_raw(context as *mut LeakableVec);
+    let wrapper = unsafe { Box::from_raw(context as *mut LeakableVec) };
 
     drop(wrapper);
 }

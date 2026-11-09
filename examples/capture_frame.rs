@@ -1,12 +1,12 @@
 #[macro_use]
 extern crate text_io;
 
+use blackmagic_decklink::device::DecklinkDeviceDisplayModes;
 use blackmagic_decklink::device::input::{
     DeckLinkInputCallback, DecklinkDetectedVideoInputFormatFlags, DecklinkVideoInputFlags,
     DecklinkVideoInputFormatChangedEvents,
 };
-use blackmagic_decklink::device::DecklinkDeviceDisplayModes;
-use blackmagic_decklink::device::{get_devices, DecklinkDevice};
+use blackmagic_decklink::device::{DecklinkDevice, get_devices};
 use blackmagic_decklink::display_mode::{DecklinkDisplayMode, DecklinkDisplayModeId};
 use blackmagic_decklink::frame::{DecklinkFrameBase, DecklinkPixelFormat, DecklinkVideoFrame};
 

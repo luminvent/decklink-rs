@@ -1,5 +1,5 @@
 use crate::device::status::DecklinkStatusId;
-use crate::{sdk, SdkError};
+use crate::{SdkError, sdk};
 use num_traits::FromPrimitive;
 use std::ptr::null_mut;
 use std::rc::Rc;

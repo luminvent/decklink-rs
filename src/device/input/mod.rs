@@ -2,20 +2,20 @@ mod device;
 pub mod enums;
 mod video_callback;
 
-use crate::allocator::{create_c_allocator_provider, VideoBufferAllocatorProvider};
+use crate::allocator::{VideoBufferAllocatorProvider, create_c_allocator_provider};
 use crate::device::input::device::DecklinkInputDevicePtr;
-use crate::device::input::video_callback::{register_input_callback, InputCallbackWrapper};
-use crate::display_mode::{iterate_display_modes, DecklinkDisplayMode, DecklinkDisplayModeId};
+use crate::device::input::video_callback::{InputCallbackWrapper, register_input_callback};
+use crate::display_mode::{DecklinkDisplayMode, DecklinkDisplayModeId, iterate_display_modes};
 use crate::frame::DecklinkPixelFormat;
-use crate::{sdk, SdkError};
+use crate::{SdkError, sdk};
 use num_traits::FromPrimitive;
 use std::ptr::null_mut;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
+use crate::device::DecklinkDeviceDisplayModes;
 pub use crate::device::input::enums::*;
 pub use crate::device::input::video_callback::DeckLinkInputCallback;
-use crate::device::DecklinkDeviceDisplayModes;
 
 pub struct DecklinkInputDevice {
     ptr: Arc<DecklinkInputDevicePtr>,

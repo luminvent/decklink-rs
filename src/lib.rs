@@ -24,8 +24,8 @@ pub mod frame;
 mod util;
 
 use std::ptr::null;
-use util::convert_and_release_c_string;
 pub use util::SdkError;
+use util::convert_and_release_c_string;
 
 /// Fetch the api version of the installed Decklink drivers.
 ///

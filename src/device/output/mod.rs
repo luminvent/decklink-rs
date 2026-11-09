@@ -6,21 +6,21 @@ mod video_callback;
 
 use crate::device::output::device::DecklinkOutputDevicePtr;
 use crate::device::output::video_callback::{register_callback, unregister_callback};
-use crate::display_mode::{iterate_display_modes, DecklinkDisplayMode, DecklinkDisplayModeId};
+use crate::display_mode::{DecklinkDisplayMode, DecklinkDisplayModeId, iterate_display_modes};
 use crate::frame::DecklinkPixelFormat;
-use crate::{sdk, SdkError};
+use crate::{SdkError, sdk};
 use num_traits::FromPrimitive;
 use std::ptr::null_mut;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use crate::device::DecklinkDeviceDisplayModes;
 pub use crate::device::output::audio::{DecklinkAudioSample, DecklinkOutputDeviceAudio};
 pub use crate::device::output::enums::*;
 pub use crate::device::output::video::{
     DecklinkOutputDeviceVideoScheduled, DecklinkOutputDeviceVideoSync,
 };
 pub use crate::device::output::video_callback::DeckLinkVideoOutputCallback;
-use crate::device::DecklinkDeviceDisplayModes;
 
 use self::video::DecklinkOutputDeviceVideoImpl;
 
@@ -92,8 +92,10 @@ impl DecklinkOutputDevice {
             // TODO - better mode
             SdkError::ACCESSDENIED as i32
         } else {
-            let result =
-                sdk::cdecklink_output_enable_video_output(self.ptr.dev, mode as u32, flags.bits());
+            let result = unsafe {
+                sdk::cdecklink_output_enable_video_output(self.ptr.dev, mode as u32, flags.bits())
+            };
+
             if !SdkError::is_ok(result) {
                 // Allow a later retry
                 self.ptr.video_active.store(false, Ordering::Relaxed);

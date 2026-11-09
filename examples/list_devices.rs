@@ -1,8 +1,8 @@
 use blackmagic_decklink::api_version;
 use blackmagic_decklink::connectors::DecklinkVideoConnection;
-use blackmagic_decklink::device::output::DecklinkVideoOutputFlags;
 use blackmagic_decklink::device::DecklinkDisplayModeSupport;
-use blackmagic_decklink::device::{get_devices, DecklinkDevice, DecklinkDeviceDisplayModes};
+use blackmagic_decklink::device::output::DecklinkVideoOutputFlags;
+use blackmagic_decklink::device::{DecklinkDevice, DecklinkDeviceDisplayModes, get_devices};
 use blackmagic_decklink::display_mode::DecklinkDisplayMode;
 use blackmagic_decklink::frame::DecklinkPixelFormat;
 use strum::IntoEnumIterator;

@@ -4,7 +4,7 @@
 //! providers that control where DeckLink writes incoming frame data. This is useful
 //! for receiving frames directly into GPU memory (e.g. CUDA pinned or device memory).
 
-use crate::{sdk, SdkError};
+use crate::{SdkError, sdk};
 use std::collections::HashMap;
 use std::ffi::c_void;
 use std::ptr::null_mut;
@@ -83,10 +83,13 @@ unsafe extern "C" fn video_buffer_get_bytes(
     context: *mut c_void,
     buffer: *mut *mut c_void,
 ) -> sdk::HRESULT {
-    let ctx = &*(context as *const VideoBufferContext);
+    let ctx = unsafe { &*(context as *const VideoBufferContext) };
+
     match ctx.buffer.get_bytes() {
         Ok(ptr) => {
-            *buffer = ptr;
+            unsafe {
+                *buffer = ptr;
+            }
             0 // S_OK
         }
         Err(e) => e.code(),
@@ -97,7 +100,8 @@ unsafe extern "C" fn video_buffer_start_access(
     context: *mut c_void,
     flags: sdk::DecklinkBufferAccessFlags,
 ) -> sdk::HRESULT {
-    let ctx = &*(context as *const VideoBufferContext);
+    let ctx = unsafe { &*(context as *const VideoBufferContext) };
+
     match ctx.buffer.start_access(flags) {
         Ok(()) => 0,
         Err(e) => e.code(),
@@ -108,7 +112,8 @@ unsafe extern "C" fn video_buffer_end_access(
     context: *mut c_void,
     flags: sdk::DecklinkBufferAccessFlags,
 ) -> sdk::HRESULT {
-    let ctx = &*(context as *const VideoBufferContext);
+    let ctx = unsafe { &*(context as *const VideoBufferContext) };
+
     match ctx.buffer.end_access(flags) {
         Ok(()) => 0,
         Err(e) => e.code(),
@@ -116,7 +121,7 @@ unsafe extern "C" fn video_buffer_end_access(
 }
 
 unsafe extern "C" fn video_buffer_release(context: *mut c_void) {
-    let _ = Box::from_raw(context as *mut VideoBufferContext);
+    let _ = unsafe { Box::from_raw(context as *mut VideoBufferContext) };
 }
 
 /// Create a C `cdecklink_video_buffer_t` backed by a Rust `VideoBuffer`.
@@ -155,11 +160,14 @@ unsafe extern "C" fn allocator_allocate(
     context: *mut c_void,
     allocated_buffer: *mut *mut sdk::cdecklink_video_buffer_t,
 ) -> sdk::HRESULT {
-    let ctx = &*(context as *const AllocatorContext);
+    let ctx = unsafe { &*(context as *const AllocatorContext) };
+
     match ctx.allocator.allocate() {
         Ok(buffer) => match create_c_video_buffer(buffer) {
             Ok(c_buf) => {
-                *allocated_buffer = c_buf;
+                unsafe {
+                    *allocated_buffer = c_buf;
+                }
                 0 // S_OK
             }
             Err(e) => e.code(),
@@ -169,7 +177,7 @@ unsafe extern "C" fn allocator_allocate(
 }
 
 unsafe extern "C" fn allocator_release(context: *mut c_void) {
-    let _ = Box::from_raw(context as *mut AllocatorContext);
+    let _ = unsafe { Box::from_raw(context as *mut AllocatorContext) };
 }
 
 /// Create a C `cdecklink_video_buffer_allocator_t` backed by a Rust allocator.
@@ -216,7 +224,8 @@ unsafe extern "C" fn provider_get_allocator(
     pixel_format: sdk::DecklinkPixelFormat,
     allocator: *mut *mut sdk::cdecklink_video_buffer_allocator_t,
 ) -> sdk::HRESULT {
-    let pctx = &*(context as *const ProviderContext);
+    let pctx = unsafe { &*(context as *const ProviderContext) };
+
     let spec = BufferSpec {
         buffer_size,
         width,
@@ -230,8 +239,11 @@ unsafe extern "C" fn provider_get_allocator(
         let cache = pctx.allocator_cache.lock().unwrap();
         if let Some(&c_alloc) = cache.get(&spec) {
             // AddRef since DeckLink will take ownership of this reference
-            sdk::cdecklink_video_buffer_allocator_add_ref(c_alloc);
-            *allocator = c_alloc;
+            unsafe {
+                sdk::cdecklink_video_buffer_allocator_add_ref(c_alloc);
+                *allocator = c_alloc;
+            }
+
             return 0;
         }
     }
@@ -241,9 +253,11 @@ unsafe extern "C" fn provider_get_allocator(
         Ok(rust_allocator) => match create_c_allocator(rust_allocator) {
             Ok(c_alloc) => {
                 // AddRef for the cache
-                sdk::cdecklink_video_buffer_allocator_add_ref(c_alloc);
-                pctx.allocator_cache.lock().unwrap().insert(spec, c_alloc);
-                *allocator = c_alloc;
+                unsafe {
+                    sdk::cdecklink_video_buffer_allocator_add_ref(c_alloc);
+                    pctx.allocator_cache.lock().unwrap().insert(spec, c_alloc);
+                    *allocator = c_alloc;
+                }
                 0
             }
             Err(e) => e.code(),
@@ -253,12 +267,16 @@ unsafe extern "C" fn provider_get_allocator(
 }
 
 unsafe extern "C" fn provider_release(context: *mut c_void) {
-    let pctx = Box::from_raw(context as *mut ProviderContext);
+    let pctx = unsafe { Box::from_raw(context as *mut ProviderContext) };
+
     // Release all cached C allocator objects
     let cache = pctx.allocator_cache.lock().unwrap();
+
     for c_alloc in cache.values() {
         if !c_alloc.is_null() {
-            sdk::cdecklink_video_buffer_allocator_release(*c_alloc);
+            unsafe {
+                sdk::cdecklink_video_buffer_allocator_release(*c_alloc);
+            }
         }
     }
 }

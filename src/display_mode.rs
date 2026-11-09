@@ -1,4 +1,4 @@
-use crate::{sdk, util::convert_and_release_c_string, SdkError};
+use crate::{SdkError, sdk, util::convert_and_release_c_string};
 use num_traits::FromPrimitive;
 use std::ptr::{null, null_mut};
 
@@ -134,7 +134,8 @@ pub(crate) unsafe fn iterate_display_modes(
 
     let mut mode = null_mut();
     loop {
-        let ok2 = sdk::cdecklink_display_mode_iterator_next(it, &mut mode);
+        let ok2 = unsafe { sdk::cdecklink_display_mode_iterator_next(it, &mut mode) };
+
         if SdkError::is_ok(ok2) {
             res.push(DecklinkDisplayMode { mode })
         } else if SdkError::is_false(ok2) {

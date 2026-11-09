@@ -1,7 +1,7 @@
-use crate::device::output::enums::DecklinkOutputFrameCompletionResult;
 use crate::device::output::DecklinkOutputDevicePtr;
+use crate::device::output::enums::DecklinkOutputFrameCompletionResult;
 use crate::frame::DecklinkVideoFrame;
-use crate::{sdk, SdkError};
+use crate::{SdkError, sdk};
 use num_traits::FromPrimitive;
 use std::rc::Rc;
 use std::sync::{Arc, RwLock};

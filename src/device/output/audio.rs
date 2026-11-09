@@ -1,5 +1,5 @@
 use crate::device::output::{DecklinkAudioSampleType, DecklinkOutputDevicePtr};
-use crate::{sdk, SdkError};
+use crate::{SdkError, sdk};
 use std::rc::Rc;
 use std::sync::atomic::Ordering;
 

@@ -6,7 +6,7 @@ use crate::device::status::DecklinkDeviceStatus;
 use crate::display_mode::{DecklinkDisplayMode, DecklinkDisplayModeId};
 use crate::frame::DecklinkPixelFormat;
 use crate::sdk;
-use crate::util::{convert_and_release_c_string, SdkError};
+use crate::util::{SdkError, convert_and_release_c_string};
 use std::ptr::{null, null_mut};
 use std::rc::{Rc, Weak};
 use std::sync::Mutex;

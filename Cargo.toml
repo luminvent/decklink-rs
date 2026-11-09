@@ -10,8 +10,8 @@ authors = [
 homepage = "https://github.com/luminvent/rust-decklink"
 repository = "https://github.com/luminvent/rust-decklink"
 keywords = ["blackmagic", "decklink", "sdi", "video", "audio"]
-edition = "2021"
-build="build.rs"
+edition = "2024"
+build = "build.rs"
 readme = "README.md"
 exclude = [
     "gen-bindings.sh",

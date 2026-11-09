@@ -2789,7 +2789,7 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn cdecklink_video_frame_get_flags(obj: *mut cdecklink_video_frame_t)
-        -> DecklinkFrameFlags;
+    -> DecklinkFrameFlags;
 }
 unsafe extern "C" {
     pub fn cdecklink_video_frame_get_timecode(
@@ -3564,19 +3564,19 @@ unsafe extern "C" {
     pub fn cdecklink_create_decklink_api_information_instance() -> *mut cdecklink_api_information_t;
 }
 unsafe extern "C" {
-    pub fn cdecklink_create_open_gl_screen_preview_helper(
-    ) -> *mut cdecklink_gl_screen_preview_helper_t;
+    pub fn cdecklink_create_open_gl_screen_preview_helper()
+    -> *mut cdecklink_gl_screen_preview_helper_t;
 }
 unsafe extern "C" {
-    pub fn cdecklink_create_open_gl3_screen_preview_helper(
-    ) -> *mut cdecklink_gl_screen_preview_helper_t;
+    pub fn cdecklink_create_open_gl3_screen_preview_helper()
+    -> *mut cdecklink_gl_screen_preview_helper_t;
 }
 unsafe extern "C" {
     pub fn cdecklink_create_video_conversion_instance() -> *mut cdecklink_video_conversion_t;
 }
 unsafe extern "C" {
-    pub fn cdecklink_create_video_frame_ancillary_packets_instance(
-    ) -> *mut cdecklink_video_frame_ancillary_packets_t;
+    pub fn cdecklink_create_video_frame_ancillary_packets_instance()
+    -> *mut cdecklink_video_frame_ancillary_packets_t;
 }
 unsafe extern "C" {
     pub fn cdecklink_device_query_output(

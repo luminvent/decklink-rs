@@ -4,7 +4,7 @@ use crate::device::input::enums::{
 };
 use crate::display_mode::DecklinkDisplayModeId;
 use crate::frame::DecklinkVideoFrame;
-use crate::{sdk, SdkError};
+use crate::{SdkError, sdk};
 use num_traits::FromPrimitive;
 use std::sync::{Arc, RwLock};
 

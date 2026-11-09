@@ -1,7 +1,7 @@
 use crate::sdk;
 use std::ptr::null_mut;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
 pub struct DecklinkInputDevicePtr {
     pub(crate) dev: *mut crate::sdk::cdecklink_input_t,

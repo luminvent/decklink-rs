@@ -5,10 +5,10 @@ use blackmagic_decklink::device::output::{
     DecklinkAudioOutputStreamType, DecklinkAudioSampleRate, DecklinkAudioSampleType,
     DecklinkOutputDevice,
 };
-use blackmagic_decklink::device::{get_devices, DecklinkDevice};
+use blackmagic_decklink::device::{DecklinkDevice, get_devices};
 use std::f64::consts::PI;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 

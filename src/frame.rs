@@ -1,4 +1,4 @@
-use crate::{sdk, SdkError};
+use crate::{SdkError, sdk};
 use aligned_vec::{AVec, ConstAlign};
 use num_traits::FromPrimitive;
 use std::ptr::null_mut;
@@ -162,7 +162,10 @@ impl DecklinkVideoFrame {
     // }
     /// Wrap a raw pointer
     pub(crate) unsafe fn from(ptr: *mut sdk::cdecklink_video_frame_t) -> Self {
-        sdk::cdecklink_video_frame_add_ref(ptr);
+        unsafe {
+            sdk::cdecklink_video_frame_add_ref(ptr);
+        }
+
         Self {
             frame: ptr,
             open_accesses: std::cell::Cell::new(0),

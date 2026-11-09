@@ -3,7 +3,7 @@ use crate::connectors::{
 };
 use crate::sdk::DecklinkAttributeID;
 use crate::util::{convert_and_release_c_string, convert_c_string};
-use crate::{sdk, SdkError};
+use crate::{SdkError, sdk};
 use std::ptr::{null, null_mut};
 
 pub struct DecklinkDeviceAttributes {
