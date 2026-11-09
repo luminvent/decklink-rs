@@ -22,7 +22,7 @@ fn main() {
             "A DeckLink iterator could not be created.  The DeckLink drivers may not be installed."
         ),
         Ok(devices) => {
-            if devices.len() == 0 {
+            if devices.is_empty() {
                 println!("No Blackmagic Design devices were found.\n");
             } else {
                 for device in devices {

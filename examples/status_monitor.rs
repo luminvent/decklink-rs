@@ -7,10 +7,10 @@ use decklink::device::notification::{
     DeckLinkNotificationCallback, DecklinkDeviceNotificationExt, NotificationTopic,
 };
 use decklink::device::status::{DecklinkDeviceStatus, DecklinkStatusId};
-use std::sync::Arc;
+use std::rc::Rc;
 
 struct NotificationCallback {
-    status: Arc<DecklinkDeviceStatus>,
+    status: Rc<DecklinkDeviceStatus>,
 }
 impl DeckLinkNotificationCallback for NotificationCallback {
     fn notify_status(&self, id: DecklinkStatusId) -> bool {
@@ -129,10 +129,12 @@ fn main() {
         println!("No Decklink devices found.");
         return;
     }
-    //    let device = devices.first().expect("Could not find any Decklink devices");
-    let device = &devices[0];
 
-    let status = Arc::new(
+    let device = devices
+        .first()
+        .expect("Could not find any Decklink devices");
+
+    let status = Rc::new(
         device
             .get_status()
             .expect("Could not obtain Decklink status object"),
@@ -161,7 +163,7 @@ fn main() {
 
     match device.get_notification() {
         Ok(notification) => {
-            let callback = Arc::new(NotificationCallback {
+            let callback = Rc::new(NotificationCallback {
                 status: status.clone(),
             });
 

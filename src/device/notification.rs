@@ -2,7 +2,7 @@ use crate::device::status::DecklinkStatusId;
 use crate::{sdk, SdkError};
 use num_traits::FromPrimitive;
 use std::ptr::null_mut;
-use std::sync::Arc;
+use std::rc::Rc;
 
 #[derive(FromPrimitive, PartialEq, Debug, Copy, Clone)]
 pub enum NotificationTopic {
@@ -24,15 +24,15 @@ pub trait DecklinkDeviceNotificationExt {
     fn subscribe(
         &self,
         topic: NotificationTopic,
-        handler: Arc<dyn DeckLinkNotificationCallback>,
+        handler: Rc<dyn DeckLinkNotificationCallback>,
     ) -> Result<DeckLinkNotificationCallbackHandle, SdkError>;
 }
 
-impl DecklinkDeviceNotificationExt for Arc<DecklinkDeviceNotification> {
+impl DecklinkDeviceNotificationExt for Rc<DecklinkDeviceNotification> {
     fn subscribe(
         &self,
         topic: NotificationTopic,
-        handler: Arc<dyn DeckLinkNotificationCallback>,
+        handler: Rc<dyn DeckLinkNotificationCallback>,
     ) -> Result<DeckLinkNotificationCallbackHandle, SdkError> {
         let ptr = Box::into_raw(Box::new(DecklinkNotificationWrapper {
             handler,
@@ -58,7 +58,7 @@ impl DecklinkDeviceNotificationExt for Arc<DecklinkDeviceNotification> {
 }
 
 pub struct DeckLinkNotificationCallbackHandle {
-    parent: Arc<DecklinkDeviceNotification>,
+    parent: Rc<DecklinkDeviceNotification>,
     wrapper: *mut DecklinkNotificationWrapper,
     unsubscribe_token: *mut std::os::raw::c_void,
 }
@@ -82,7 +82,7 @@ pub trait DeckLinkNotificationCallback {
     fn notify_status(&self, id: DecklinkStatusId) -> bool;
 }
 struct DecklinkNotificationWrapper {
-    handler: Arc<dyn DeckLinkNotificationCallback>,
+    handler: Rc<dyn DeckLinkNotificationCallback>,
     topic: u32,
 }
 

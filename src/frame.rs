@@ -202,7 +202,7 @@ impl DecklinkFrameBase for DecklinkVideoMutableFrame {
 
     fn bytes(&self) -> Result<DecklinkAlignedBytes<'_>, SdkError> {
         if let Some(bytes) = &self.bytes {
-            Ok(DecklinkAlignedBytes(&bytes))
+            Ok(DecklinkAlignedBytes(bytes))
         } else {
             Err(SdkError::FALSE)
         }

@@ -15,11 +15,12 @@ fn select_output_and_format() -> Option<(DecklinkDevice, DecklinkOutputDevice, D
     let device = {
         let mut devices = get_devices().expect("list devices failed");
         println!("Found {} devices", devices.len());
-        for i in 0..devices.len() {
+
+        for (index, decklink_device) in devices.iter().enumerate() {
             println!(
                 "{}: {}",
-                i,
-                devices[i]
+                index,
+                decklink_device
                     .display_name()
                     .unwrap_or_else(|| "Unknown".to_string())
             );
@@ -50,26 +51,27 @@ fn select_output_and_format() -> Option<(DecklinkDevice, DecklinkOutputDevice, D
     };
 
     let mode = {
-        let mut supported_modes = output
+        let mut decklink_display_modes = output
             .display_modes()
             .expect("Failed to list display modes");
-        for i in 0..supported_modes.len() {
+
+        for (index, decklink_display_mode) in decklink_display_modes.iter().enumerate() {
             println!(
                 "{}: {}",
-                i,
-                supported_modes[i]
+                index,
+                decklink_display_mode
                     .name()
                     .unwrap_or_else(|| "Unknown".to_string())
             );
         }
 
         let index: usize = read!();
-        if index >= supported_modes.len() {
+        if index >= decklink_display_modes.len() {
             println!("Invalid mode index");
             return None;
         }
 
-        supported_modes.swap_remove(index)
+        decklink_display_modes.swap_remove(index)
     };
 
     Some((device, output, mode))
@@ -98,7 +100,7 @@ fn main() {
 
             for index in 0..mode.width() * mode.height() {
                 // Blue
-                bytes[index * 4 + 0] = (time_index % 256) as u8;
+                bytes[index * 4] = (time_index % 256) as u8;
                 // Green
                 bytes[index * 4 + 1] = ((time_index + 128) % 256) as u8;
                 // Red

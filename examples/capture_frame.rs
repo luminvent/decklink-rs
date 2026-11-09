@@ -108,11 +108,11 @@ fn select_input_and_format() -> Option<(
         }
 
         println!("Found {} device(s):", devices.len());
-        for i in 0..devices.len() {
+        for (index, device) in devices.iter().enumerate() {
             println!(
                 "  {}: {}",
-                i,
-                devices[i]
+                index,
+                device
                     .display_name()
                     .unwrap_or_else(|| "Unknown".to_string())
             );
@@ -144,14 +144,13 @@ fn select_input_and_format() -> Option<(
     };
 
     let mode = {
-        let mut supported_modes = input
+        let mut decklink_display_modes = input
             .display_modes()
             .expect("Failed to list input display modes");
 
         println!("Available input modes:");
-        for i in 0..supported_modes.len() {
-            let m = &supported_modes[i];
-            let framerate = m
+        for (index, decklink_display_mode) in decklink_display_modes.iter().enumerate() {
+            let framerate = decklink_display_mode
                 .framerate()
                 .map(|(d, s)| {
                     if d > 0 {
@@ -161,24 +160,27 @@ fn select_input_and_format() -> Option<(
                     }
                 })
                 .unwrap_or_else(|| "? fps".to_string());
+
             println!(
                 "  {}: {} ({}x{}, {})",
-                i,
-                m.name().unwrap_or_else(|| "Unknown".to_string()),
-                m.width(),
-                m.height(),
+                index,
+                decklink_display_mode
+                    .name()
+                    .unwrap_or_else(|| "Unknown".to_string()),
+                decklink_display_mode.width(),
+                decklink_display_mode.height(),
                 framerate,
             );
         }
 
         print!("Select mode index: ");
         let index: usize = read!();
-        if index >= supported_modes.len() {
+        if index >= decklink_display_modes.len() {
             println!("Invalid mode index");
             return None;
         }
 
-        supported_modes.swap_remove(index)
+        decklink_display_modes.swap_remove(index)
     };
 
     Some((device, input, mode))

@@ -113,7 +113,8 @@ impl DecklinkOutputDeviceVideoSync for DecklinkOutputDeviceVideoImpl {
         if bytes.len() < required_bytes {
             Err(SdkError::INVALIDARG)?;
         }
-        if required_bytes % 64 != 0 {
+
+        if required_bytes.is_multiple_of(64) {
             // Must be a multiple of 64 to be valid for avx512
             Err(SdkError::INVALIDARG)?;
         }

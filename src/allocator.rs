@@ -256,7 +256,7 @@ unsafe extern "C" fn provider_release(context: *mut c_void) {
     let pctx = Box::from_raw(context as *mut ProviderContext);
     // Release all cached C allocator objects
     let cache = pctx.allocator_cache.lock().unwrap();
-    for (_, c_alloc) in cache.iter() {
+    for c_alloc in cache.values() {
         if !c_alloc.is_null() {
             sdk::cdecklink_video_buffer_allocator_release(*c_alloc);
         }

@@ -23,11 +23,12 @@ const CHUNK_FRAMES: u32 = 1_600;
 fn select_device() -> Option<(DecklinkDevice, DecklinkOutputDevice)> {
     let mut devices = get_devices().expect("list devices failed");
     println!("Found {} devices", devices.len());
-    for i in 0..devices.len() {
+
+    for (index, decklink_device) in devices.iter().enumerate() {
         println!(
             "{}: {}",
-            i,
-            devices[i]
+            index,
+            decklink_device
                 .display_name()
                 .unwrap_or_else(|| "Unknown".to_string())
         );

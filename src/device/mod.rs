@@ -8,7 +8,8 @@ use crate::frame::DecklinkPixelFormat;
 use crate::sdk;
 use crate::util::{convert_and_release_c_string, SdkError};
 use std::ptr::{null, null_mut};
-use std::sync::{Arc, Mutex, Weak};
+use std::rc::{Rc, Weak};
+use std::sync::Mutex;
 
 pub mod attributes;
 pub mod input;
@@ -17,7 +18,7 @@ pub mod output;
 pub mod status;
 
 pub struct DecklinkDevice {
-    dev: *mut crate::sdk::cdecklink_device_t,
+    dev: *mut sdk::cdecklink_device_t,
 
     notification: Mutex<Weak<DecklinkDeviceNotification>>,
 }
@@ -78,7 +79,7 @@ impl DecklinkDevice {
         let r = unsafe { sdk::cdecklink_device_query_status(self.dev, &mut s) };
         SdkError::result_or_else(r, || DecklinkDeviceStatus::from(s))
     }
-    pub fn get_notification(&self) -> Result<Arc<DecklinkDeviceNotification>, SdkError> {
+    pub fn get_notification(&self) -> Result<Rc<DecklinkDeviceNotification>, SdkError> {
         if let Ok(locked) = self.notification.lock() {
             if let Some(val) = locked.upgrade() {
                 Ok(val)
