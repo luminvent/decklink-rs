@@ -2,45 +2,36 @@ use num_traits::FromPrimitive;
 use std::ffi::CStr;
 
 // TODO - refactor the error type to abstract away weird errors?
-#[derive(Debug, FromPrimitive)]
-#[allow(overflowing_literals)]
+/// HRESULT codes returned by the DeckLink SDK (values match the SDK's `E_*` definitions).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, FromPrimitive)]
+#[repr(i32)]
 pub enum SdkError {
     FALSE = 0x0000_0001,
-    UNEXPECTED = -0x0000_FFFF,
-    NOTIMPL = -0x0000_0001,
-    OUTOFMEMORY = -0x0000_0002,
-    INVALIDARG = -0x0000_0003,
-    NOINTERFACE = -0x0000_0004,
-    POINTER = -0x0000_0005,
-    HANDLE = -0x0000_0006,
-    ABORT = -0x0000_0007,
-    FAIL = -0x0000_0008,
-    ACCESSDENIED = -0x0009,
+    UNEXPECTED = 0x8000_FFFF_u32 as i32,
+    NOTIMPL = 0x8000_0001_u32 as i32,
+    OUTOFMEMORY = 0x8000_0002_u32 as i32,
+    INVALIDARG = 0x8000_0003_u32 as i32,
+    NOINTERFACE = 0x8000_0004_u32 as i32,
+    POINTER = 0x8000_0005_u32 as i32,
+    HANDLE = 0x8000_0006_u32 as i32,
+    ABORT = 0x8000_0007_u32 as i32,
+    FAIL = 0x8000_0008_u32 as i32,
+    ACCESSDENIED = 0x8000_0009_u32 as i32,
 }
 
 impl SdkError {
     /// Return the raw HRESULT code for this error.
     pub(crate) fn code(&self) -> i32 {
-        // The enum discriminant values are the HRESULT codes
-        // We can safely transmute since the repr is i32-compatible
-        match self {
-            SdkError::FALSE => 0x0000_0001,
-            SdkError::UNEXPECTED => -0x0000_FFFFi32,
-            SdkError::NOTIMPL => -0x0000_0001i32,
-            SdkError::OUTOFMEMORY => -0x0000_0002i32,
-            SdkError::INVALIDARG => -0x0000_0003i32,
-            SdkError::NOINTERFACE => -0x0000_0004i32,
-            SdkError::POINTER => -0x0000_0005i32,
-            SdkError::HANDLE => -0x0000_0006i32,
-            SdkError::ABORT => -0x0000_0007i32,
-            SdkError::FAIL => -0x0000_0008i32,
-            SdkError::ACCESSDENIED => -0x0009i32,
-        }
+        *self as i32
     }
 
-    #[allow(overflowing_literals)]
     pub(crate) fn from(value: i32) -> SdkError {
-        Self::from_i32(value).unwrap_or(SdkError::FALSE)
+        // Unknown failure codes are reported as a generic failure rather than S_FALSE
+        Self::from_i32(value).unwrap_or(if value < 0 {
+            SdkError::FAIL
+        } else {
+            SdkError::FALSE
+        })
     }
     pub(crate) fn is_false(value: i32) -> bool {
         value == (SdkError::FALSE as i32)
@@ -79,4 +70,21 @@ pub(crate) unsafe fn convert_and_release_c_string(ptr: *const ::std::os::raw::c_
     let str = convert_c_string(ptr);
     crate::sdk::cdecklink_free_string(ptr);
     str
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SdkError;
+
+    #[test]
+    fn maps_sdk_hresults() {
+        assert_eq!(SdkError::from(0x8000_0008_u32 as i32), SdkError::FAIL);
+        assert_eq!(
+            SdkError::from(0x8000_0009_u32 as i32),
+            SdkError::ACCESSDENIED
+        );
+        assert_eq!(SdkError::from(0x8000_FFFF_u32 as i32), SdkError::UNEXPECTED);
+        assert_eq!(SdkError::from(1), SdkError::FALSE);
+        assert_eq!(SdkError::INVALIDARG.code(), 0x8000_0003_u32 as i32);
+    }
 }

@@ -56,11 +56,17 @@ pub type DecklinkAlignedVec = AVec<u8, ConstAlign<64>>;
 /// This represents a video frame that has been received from a decklink device.
 pub struct DecklinkVideoFrame {
     frame: *mut crate::sdk::cdecklink_video_frame_t,
+    /// Buffer accesses started by `bytes_handle`, ended when the frame is dropped
+    /// (the returned slice borrows the frame, so it cannot outlive it).
+    open_accesses: std::cell::Cell<u32>,
 }
 
 impl Drop for DecklinkVideoFrame {
     fn drop(&mut self) {
         if !self.frame.is_null() {
+            for _ in 0..self.open_accesses.get() {
+                unsafe { sdk::cdecklink_video_frame_end_access(self.frame) };
+            }
             unsafe { sdk::cdecklink_video_frame_release(self.frame) };
             self.frame = null_mut();
         }
@@ -140,6 +146,7 @@ impl DecklinkVideoFrame {
         let mut bytes: *mut std::ffi::c_void = std::ptr::null_mut();
         let result = unsafe { sdk::cdecklink_video_frame_get_bytes(self.frame, &mut bytes) };
         SdkError::result::<()>(result)?;
+        self.open_accesses.set(self.open_accesses.get() + 1);
 
         assert!(!bytes.is_null());
 
@@ -156,7 +163,10 @@ impl DecklinkVideoFrame {
     /// Wrap a raw pointer
     pub(crate) unsafe fn from(ptr: *mut sdk::cdecklink_video_frame_t) -> Self {
         sdk::cdecklink_video_frame_add_ref(ptr);
-        Self { frame: ptr }
+        Self {
+            frame: ptr,
+            open_accesses: std::cell::Cell::new(0),
+        }
     }
 }
 

@@ -1,4 +1,6 @@
-use crate::device::output::video_callback::{CallbackWrapper, DeckLinkVideoOutputCallback};
+use crate::device::output::video_callback::{
+    unregister_callback, CallbackWrapper, DeckLinkVideoOutputCallback,
+};
 use crate::device::output::DecklinkOutputDevicePtr;
 use crate::frame::{DecklinkAlignedVec, DecklinkFrameBase, DecklinkFrameBase2};
 use crate::{sdk, SdkError};
@@ -58,7 +60,8 @@ impl Drop for DecklinkOutputDeviceVideoImpl {
             self.ptr.video_active.store(false, Ordering::Relaxed);
 
             if !self.callback_wrapper.is_null() {
-                drop(Box::from_raw(self.callback_wrapper)); // Reclaim the box so it gets freed
+                // Detach from the SDK before freeing, so it never sees a dangling context
+                unregister_callback(&self.ptr, self.callback_wrapper);
                 self.callback_wrapper = std::ptr::null_mut();
             }
         }
@@ -69,23 +72,14 @@ impl DecklinkOutputDeviceVideo for DecklinkOutputDeviceVideoImpl {}
 
 impl DecklinkOutputDeviceVideoSync for DecklinkOutputDeviceVideoImpl {
     fn display_frame_copy(&self, frame: &dyn DecklinkFrameBase) -> Result<(), SdkError> {
-        let decklink_frame = self.convert_decklink_frame_without_bytes(frame)?;
-
-        let mut ptr: *mut std::ffi::c_void = std::ptr::null_mut();
-        let result = unsafe {
-            sdk::cdecklink_video_buffer_get_bytes(
-                decklink_frame.ptr as *mut sdk::cdecklink_video_buffer_t,
-                &mut ptr,
-            )
-        };
-        SdkError::result::<()>(result)?;
-
         let byte_count = frame.row_bytes() * frame.height();
         let src_bytes = frame.bytes()?;
         if src_bytes.0.len() < byte_count {
             Err(SdkError::INVALIDARG)?;
         }
-        unsafe { std::ptr::copy(src_bytes.0.as_ptr(), ptr as *mut _, byte_count) };
+
+        let decklink_frame = self.convert_decklink_frame_without_bytes(frame)?;
+        decklink_frame.write_bytes(&src_bytes.0[..byte_count])?;
 
         let result = unsafe {
             sdk::cdecklink_output_display_video_frame_sync(self.ptr.dev, decklink_frame.ptr)
@@ -157,20 +151,7 @@ impl DecklinkOutputDeviceVideoScheduled for DecklinkOutputDeviceVideoImpl {
         }
 
         let frame = self.convert_decklink_frame_without_bytes(frame)?;
-
-        let mut bytes_ptr: *mut std::ffi::c_void = std::ptr::null_mut();
-        let result = unsafe {
-            sdk::cdecklink_video_buffer_get_bytes(
-                frame.ptr as *mut sdk::cdecklink_video_buffer_t,
-                &mut bytes_ptr,
-            )
-        };
-        SdkError::result::<()>(result)?;
-        if bytes_ptr.is_null() {
-            Err(SdkError::FAIL)?;
-        }
-
-        unsafe { std::ptr::copy(frame_bytes.0.as_ptr(), bytes_ptr as *mut _, byte_count) };
+        frame.write_bytes(&frame_bytes.0[..byte_count])?;
 
         let result = unsafe {
             sdk::cdecklink_output_schedule_video_frame(
@@ -280,8 +261,8 @@ impl DecklinkOutputDeviceVideoImpl {
             if c_frame.is_null() {
                 Err(SdkError::FAIL)?;
             }
-
-            sdk::cdecklink_video_frame_add_ref(c_frame);
+            // CreateVideoFrame hands us a frame with a reference count of 1, owned by
+            // WrappedSdkFrame. The SDK takes its own reference when the frame is scheduled.
         }
 
         Ok(WrappedSdkFrame { ptr: c_frame })
@@ -290,6 +271,41 @@ impl DecklinkOutputDeviceVideoImpl {
 
 pub(crate) struct WrappedSdkFrame {
     pub ptr: *mut crate::sdk::cdecklink_mutable_video_frame_t,
+}
+impl WrappedSdkFrame {
+    /// Copy `src` into the frame buffer.
+    ///
+    /// Since SDK v15 the pixel data lives behind `IDeckLinkVideoBuffer`, which must be
+    /// obtained with `QueryInterface` (the frame pointer cannot simply be cast) and
+    /// accessed between `StartAccess`/`EndAccess`.
+    fn write_bytes(&self, src: &[u8]) -> Result<(), SdkError> {
+        unsafe {
+            let mut buffer: *mut sdk::cdecklink_video_buffer_t = std::ptr::null_mut();
+            let result = sdk::cdecklink_video_frame_query_video_buffer(self.ptr, &mut buffer);
+            SdkError::result::<()>(result)?;
+            if buffer.is_null() {
+                return Err(SdkError::NOINTERFACE);
+            }
+
+            let access = sdk::_DecklinkBufferAccessFlags_decklinkBufferAccessWrite;
+            let mut result = sdk::cdecklink_video_buffer_start_access(buffer, access);
+            if SdkError::is_ok(result) {
+                let mut dst: *mut std::ffi::c_void = std::ptr::null_mut();
+                result = sdk::cdecklink_video_buffer_get_bytes(buffer, &mut dst);
+                if SdkError::is_ok(result) {
+                    if dst.is_null() {
+                        result = SdkError::FAIL as i32;
+                    } else {
+                        std::ptr::copy_nonoverlapping(src.as_ptr(), dst as *mut u8, src.len());
+                    }
+                }
+                sdk::cdecklink_video_buffer_end_access(buffer, access);
+            }
+            sdk::cdecklink_video_buffer_release(buffer);
+
+            SdkError::result(result)
+        }
+    }
 }
 impl Drop for WrappedSdkFrame {
     fn drop(&mut self) {

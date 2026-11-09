@@ -11,7 +11,7 @@ use std::f64::consts::PI;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::sleep;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 const SAMPLE_RATE: u32 = 48_000;
 const CHANNELS: u32 = 2;
@@ -99,20 +99,39 @@ fn main() {
         quit_clone.store(true, Ordering::Relaxed);
     });
 
+    let start = Instant::now();
     let mut phase = 0.0f64;
+    let mut pending: Vec<i16> = Vec::new();
+    let mut total_written: u64 = 0;
     loop {
         if quit.load(Ordering::Relaxed) {
             break;
         }
 
-        let buf = sine_chunk(&mut phase);
+        if pending.is_empty() {
+            pending = sine_chunk(&mut phase);
+        }
+        let frames = pending.len() as u32 / CHANNELS;
         let written = audio
-            .write_audio_samples_sync(&buf, CHUNK_FRAMES)
+            .write_audio_samples_sync(&pending, frames)
             .expect("Failed to write audio samples");
+        total_written += written as u64;
+
+        // Keep the samples the device did not accept, so the tone stays continuous
+        pending.drain(..(written * CHANNELS) as usize);
 
         // Back off briefly if the internal buffer was full to avoid spinning
-        if written < CHUNK_FRAMES {
+        if written < frames {
             sleep(Duration::from_millis(5));
         }
     }
+
+    let elapsed = start.elapsed().as_secs_f64();
+    println!(
+        "Wrote {} sample frames in {:.2}s ({:.0} frames/s, expected {})",
+        total_written,
+        elapsed,
+        total_written as f64 / elapsed,
+        SAMPLE_RATE
+    );
 }

@@ -10,7 +10,8 @@ use decklink::device::DecklinkDeviceDisplayModes;
 use decklink::device::{get_devices, DecklinkDevice};
 use decklink::display_mode::DecklinkDisplayMode;
 use decklink::frame::{
-    DecklinkFrameFlags, DecklinkPixelFormat, DecklinkVideoFrame, DecklinkVideoMutableFrame,
+    DecklinkAlignedVec, DecklinkFrameFlags, DecklinkPixelFormat, DecklinkVideoFrame,
+    DecklinkVideoMutableFrame,
 };
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -95,7 +96,12 @@ impl DeckLinkVideoOutputCallback for ScheduledPlaybackCallback {
         _frame: Option<DecklinkVideoFrame>,
         result: DecklinkOutputFrameCompletionResult,
     ) -> bool {
-        if result != DecklinkOutputFrameCompletionResult::Completed {
+        // Frames still queued when playback stops are reported as Flushed, which is expected
+        if !matches!(
+            result,
+            DecklinkOutputFrameCompletionResult::Completed
+                | DecklinkOutputFrameCompletionResult::Flushed
+        ) {
             eprintln!("Frame not completed as expected: {:?}", result);
         }
         true
@@ -118,14 +124,13 @@ fn build_frame(width: usize, height: usize, frame_index: usize) -> DecklinkVideo
     );
 
     let t = frame_index as u8;
-    let mut bytes = vec![0u8; width * height * 4];
-    for i in (0..bytes.len()).step_by(4) {
-        bytes[i] = t; // B
-        bytes[i + 1] = t.wrapping_add(85); // G
-        bytes[i + 2] = t.wrapping_add(170); // R
+    let pixel = [t, t.wrapping_add(85), t.wrapping_add(170), 0xff]; // B G R A
+    let mut bytes = DecklinkAlignedVec::with_capacity(64, width * height * 4);
+    for _ in 0..width * height {
+        bytes.extend_from_slice(&pixel);
     }
 
-    frame.copy_bytes(&bytes).expect("Failed to set frame bytes");
+    frame.set_bytes(bytes).expect("Failed to set frame bytes");
     frame
 }
 
@@ -192,7 +197,9 @@ fn main() {
         }
 
         // Keep the buffer topped up so the hardware never runs dry
-        while video_output.buffered_video_frame_count().unwrap_or(0) < MIN_BUFFERED_FRAMES {
+        while !quit.load(Ordering::Relaxed)
+            && video_output.buffered_video_frame_count().unwrap_or(0) < MIN_BUFFERED_FRAMES
+        {
             let frame = build_frame(mode.width(), mode.height(), frame_index);
             video_output
                 .schedule_frame_copy(&frame, next_display_time, frame_duration)

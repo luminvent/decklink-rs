@@ -1,29 +1,81 @@
-use crate::device::output::DecklinkOutputDevicePtr;
+use crate::device::output::{DecklinkAudioSampleType, DecklinkOutputDevicePtr};
 use crate::{sdk, SdkError};
 use std::rc::Rc;
 use std::sync::atomic::Ordering;
 
+mod private {
+    pub trait Sealed {}
+    impl Sealed for i16 {}
+    impl Sealed for i32 {}
+}
+
+/// A PCM sample type accepted by the audio output (`i16` or `i32`).
+pub trait DecklinkAudioSample: private::Sealed + Copy {
+    const SAMPLE_TYPE: DecklinkAudioSampleType;
+}
+impl DecklinkAudioSample for i16 {
+    const SAMPLE_TYPE: DecklinkAudioSampleType = DecklinkAudioSampleType::Int16;
+}
+impl DecklinkAudioSample for i32 {
+    const SAMPLE_TYPE: DecklinkAudioSampleType = DecklinkAudioSampleType::Int32;
+}
+
 pub struct DecklinkOutputDeviceAudio {
     ptr: Rc<DecklinkOutputDevicePtr>,
+    sample_type: DecklinkAudioSampleType,
+    channels: u32,
 }
 impl Drop for DecklinkOutputDeviceAudio {
     fn drop(&mut self) {
-        // TODO - this is not safe!
         unsafe {
             sdk::cdecklink_output_disable_audio_output(self.ptr.dev);
-            self.ptr.audio_active.store(false, Ordering::Relaxed)
         }
+        self.ptr.audio_active.store(false, Ordering::Relaxed)
     }
 }
 impl DecklinkOutputDeviceAudio {
-    pub(crate) fn from(ptr: &Rc<DecklinkOutputDevicePtr>) -> DecklinkOutputDeviceAudio {
-        DecklinkOutputDeviceAudio { ptr: ptr.clone() }
+    pub(crate) fn from(
+        ptr: &Rc<DecklinkOutputDevicePtr>,
+        sample_type: DecklinkAudioSampleType,
+        channels: u32,
+    ) -> DecklinkOutputDeviceAudio {
+        DecklinkOutputDeviceAudio {
+            ptr: ptr.clone(),
+            sample_type,
+            channels,
+        }
     }
-    pub fn write_audio_samples_sync(
+
+    pub fn sample_type(&self) -> DecklinkAudioSampleType {
+        self.sample_type
+    }
+    pub fn channels(&self) -> u32 {
+        self.channels
+    }
+
+    /// Ensure `buffer` matches the enabled sample type and holds `sample_frame_count`
+    /// interleaved frames, so the SDK never reads past the end of the slice.
+    fn check_buffer<T: DecklinkAudioSample>(
         &self,
-        buffer: &[i16],
+        buffer: &[T],
+        sample_frame_count: u32,
+    ) -> Result<(), SdkError> {
+        let required = sample_frame_count as usize * self.channels as usize;
+        if T::SAMPLE_TYPE != self.sample_type || buffer.len() < required {
+            Err(SdkError::INVALIDARG)
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Write interleaved samples for immediate playback.
+    /// Returns the number of sample frames actually accepted, which may be fewer than requested.
+    pub fn write_audio_samples_sync<T: DecklinkAudioSample>(
+        &self,
+        buffer: &[T],
         sample_frame_count: u32,
     ) -> Result<u32, SdkError> {
+        self.check_buffer(buffer, sample_frame_count)?;
         unsafe {
             let mut samples_written = 0u32;
             let result = sdk::cdecklink_output_write_audio_samples_sync(
@@ -36,13 +88,16 @@ impl DecklinkOutputDeviceAudio {
         }
     }
 
-    pub fn schedule_audio_samples(
+    /// Schedule interleaved samples at `stream_time` (in `time_scale` units).
+    /// Returns the number of sample frames actually accepted, which may be fewer than requested.
+    pub fn schedule_audio_samples<T: DecklinkAudioSample>(
         &self,
-        buffer: &[i16],
+        buffer: &[T],
         sample_frame_count: u32,
         stream_time: i64,
         time_scale: i64,
     ) -> Result<u32, SdkError> {
+        self.check_buffer(buffer, sample_frame_count)?;
         unsafe {
             let mut samples_written = 0u32;
             let result = sdk::cdecklink_output_schedule_audio_samples(

@@ -5,7 +5,7 @@ mod video;
 mod video_callback;
 
 use crate::device::output::device::DecklinkOutputDevicePtr;
-use crate::device::output::video_callback::register_callback;
+use crate::device::output::video_callback::{register_callback, unregister_callback};
 use crate::display_mode::{iterate_display_modes, DecklinkDisplayMode, DecklinkDisplayModeId};
 use crate::frame::DecklinkPixelFormat;
 use crate::{sdk, SdkError};
@@ -14,7 +14,7 @@ use std::ptr::null_mut;
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-pub use crate::device::output::audio::DecklinkOutputDeviceAudio;
+pub use crate::device::output::audio::{DecklinkAudioSample, DecklinkOutputDeviceAudio};
 pub use crate::device::output::enums::*;
 pub use crate::device::output::video::{
     DecklinkOutputDeviceVideoScheduled, DecklinkOutputDeviceVideoSync,
@@ -92,7 +92,13 @@ impl DecklinkOutputDevice {
             // TODO - better mode
             SdkError::ACCESSDENIED as i32
         } else {
-            sdk::cdecklink_output_enable_video_output(self.ptr.dev, mode as u32, flags.bits())
+            let result =
+                sdk::cdecklink_output_enable_video_output(self.ptr.dev, mode as u32, flags.bits());
+            if !SdkError::is_ok(result) {
+                // Allow a later retry
+                self.ptr.video_active.store(false, Ordering::Relaxed);
+            }
+            result
         }
     }
 
@@ -111,17 +117,20 @@ impl DecklinkOutputDevice {
         flags: enums::DecklinkVideoOutputFlags,
         timescale: i64,
     ) -> Result<Box<dyn DecklinkOutputDeviceVideoScheduled>, SdkError> {
-        // Don't do this if already running?
+        if self.ptr.video_active.load(Ordering::Relaxed) {
+            return Err(SdkError::ACCESSDENIED);
+        }
         let wrapper = register_callback(&self.ptr)?;
 
-        // TODO - this leaks on error
         let result = unsafe { self.enable_video_output_inner(mode, flags) };
-        SdkError::result_or_else(result, || {
-            let r: Box<dyn DecklinkOutputDeviceVideoScheduled> = Box::new(
-                DecklinkOutputDeviceVideoImpl::from(&self.ptr, wrapper, timescale),
-            );
-            r
-        })
+        if !SdkError::is_ok(result) {
+            unregister_callback(&self.ptr, wrapper);
+            return Err(SdkError::from(result));
+        }
+        let r: Box<dyn DecklinkOutputDeviceVideoScheduled> = Box::new(
+            DecklinkOutputDeviceVideoImpl::from(&self.ptr, wrapper, timescale),
+        );
+        Ok(r)
     }
 
     pub fn enable_video_output_sync(
@@ -159,7 +168,12 @@ impl DecklinkOutputDevice {
                     channels,
                     stream_type as u32,
                 );
-                SdkError::result_or_else(result, || DecklinkOutputDeviceAudio::from(&self.ptr))
+                if !SdkError::is_ok(result) {
+                    self.ptr.audio_active.store(false, Ordering::Relaxed);
+                }
+                SdkError::result_or_else(result, || {
+                    DecklinkOutputDeviceAudio::from(&self.ptr, sample_type, channels)
+                })
             }
         }
     }

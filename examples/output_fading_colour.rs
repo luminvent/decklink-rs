@@ -123,13 +123,6 @@ fn main() {
                 )
                 .expect("Failed to enable video output");
 
-            let buffered_video_frame_count = video_output.buffered_video_frame_count().unwrap();
-
-            if buffered_video_frame_count < 5 {
-                println!("Buffered frame count is less than 5");
-                return;
-            }
-
             video_output
                 .schedule_frame_copy(frame.as_ref(), 1000, 1000)
                 .expect("Failed to schedule frame");
@@ -145,6 +138,16 @@ fn main() {
             video_output
                 .schedule_frame_copy(frame.as_ref(), 400000000, 1000)
                 .expect("Failed to schedule frame");
+
+            // Nothing is buffered until frames are scheduled, so check after queuing them
+            let buffered_video_frame_count = video_output
+                .buffered_video_frame_count()
+                .expect("Failed to get buffered frame count");
+            println!("Buffered frames: {}", buffered_video_frame_count);
+            if buffered_video_frame_count < 5 {
+                println!("Buffered frame count is less than 5");
+                return;
+            }
 
             let handler = Arc::new(CompletionCallback {});
             video_output

@@ -12,6 +12,22 @@ pub(crate) fn free_callback_wrapper(wrapper: *mut CallbackWrapper) {
     }
 }
 
+/// Detach the callback from the device, then free the wrapper.
+pub(crate) fn unregister_callback(
+    ptr: &Rc<DecklinkOutputDevicePtr>,
+    wrapper: *mut CallbackWrapper,
+) {
+    unsafe {
+        sdk::cdecklink_output_set_scheduled_frame_completion_callback(
+            ptr.dev,
+            std::ptr::null_mut(),
+            None,
+            None,
+        );
+    }
+    free_callback_wrapper(wrapper);
+}
+
 pub fn register_callback(
     ptr: &Rc<DecklinkOutputDevicePtr>,
 ) -> Result<*mut CallbackWrapper, SdkError> {
