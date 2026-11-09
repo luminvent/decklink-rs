@@ -1,12 +1,10 @@
-extern crate decklink;
-
-use decklink::api_version;
-use decklink::connectors::DecklinkVideoConnection;
-use decklink::device::output::DecklinkVideoOutputFlags;
-use decklink::device::DecklinkDisplayModeSupport;
-use decklink::device::{get_devices, DecklinkDevice, DecklinkDeviceDisplayModes};
-use decklink::display_mode::DecklinkDisplayMode;
-use decklink::frame::DecklinkPixelFormat;
+use blackmagic_decklink::api_version;
+use blackmagic_decklink::connectors::DecklinkVideoConnection;
+use blackmagic_decklink::device::output::DecklinkVideoOutputFlags;
+use blackmagic_decklink::device::DecklinkDisplayModeSupport;
+use blackmagic_decklink::device::{get_devices, DecklinkDevice, DecklinkDeviceDisplayModes};
+use blackmagic_decklink::display_mode::DecklinkDisplayMode;
+use blackmagic_decklink::frame::DecklinkPixelFormat;
 use strum::IntoEnumIterator;
 
 fn main() {

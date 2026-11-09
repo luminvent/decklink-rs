@@ -1,12 +1,13 @@
-extern crate decklink;
 #[macro_use]
 extern crate text_io;
 
-use decklink::device::output::{DecklinkOutputDevice, DecklinkVideoOutputFlags};
-use decklink::device::DecklinkDeviceDisplayModes;
-use decklink::device::{get_devices, DecklinkDevice};
-use decklink::display_mode::DecklinkDisplayMode;
-use decklink::frame::{DecklinkFrameFlags, DecklinkPixelFormat, DecklinkVideoMutableFrame};
+use blackmagic_decklink::device::output::{DecklinkOutputDevice, DecklinkVideoOutputFlags};
+use blackmagic_decklink::device::DecklinkDeviceDisplayModes;
+use blackmagic_decklink::device::{get_devices, DecklinkDevice};
+use blackmagic_decklink::display_mode::DecklinkDisplayMode;
+use blackmagic_decklink::frame::{
+    DecklinkFrameFlags, DecklinkPixelFormat, DecklinkVideoMutableFrame,
+};
 use std::thread::sleep;
 use std::time::Duration;
 

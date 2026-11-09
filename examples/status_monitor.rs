@@ -1,12 +1,11 @@
-extern crate decklink;
 #[macro_use]
 extern crate text_io;
 
-use decklink::device::get_devices;
-use decklink::device::notification::{
+use blackmagic_decklink::device::get_devices;
+use blackmagic_decklink::device::notification::{
     DeckLinkNotificationCallback, DecklinkDeviceNotificationExt, NotificationTopic,
 };
-use decklink::device::status::{DecklinkDeviceStatus, DecklinkStatusId};
+use blackmagic_decklink::device::status::{DecklinkDeviceStatus, DecklinkStatusId};
 use std::rc::Rc;
 
 struct NotificationCallback {

@@ -1,12 +1,11 @@
-extern crate decklink;
 #[macro_use]
 extern crate text_io;
 
-use decklink::device::output::{
+use blackmagic_decklink::device::output::{
     DecklinkAudioOutputStreamType, DecklinkAudioSampleRate, DecklinkAudioSampleType,
     DecklinkOutputDevice,
 };
-use decklink::device::{get_devices, DecklinkDevice};
+use blackmagic_decklink::device::{get_devices, DecklinkDevice};
 use std::f64::consts::PI;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;

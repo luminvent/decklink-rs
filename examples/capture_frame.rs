@@ -1,15 +1,14 @@
-extern crate decklink;
 #[macro_use]
 extern crate text_io;
 
-use decklink::device::input::{
+use blackmagic_decklink::device::input::{
     DeckLinkInputCallback, DecklinkDetectedVideoInputFormatFlags, DecklinkVideoInputFlags,
     DecklinkVideoInputFormatChangedEvents,
 };
-use decklink::device::DecklinkDeviceDisplayModes;
-use decklink::device::{get_devices, DecklinkDevice};
-use decklink::display_mode::{DecklinkDisplayMode, DecklinkDisplayModeId};
-use decklink::frame::{DecklinkFrameBase, DecklinkPixelFormat, DecklinkVideoFrame};
+use blackmagic_decklink::device::DecklinkDeviceDisplayModes;
+use blackmagic_decklink::device::{get_devices, DecklinkDevice};
+use blackmagic_decklink::display_mode::{DecklinkDisplayMode, DecklinkDisplayModeId};
+use blackmagic_decklink::frame::{DecklinkFrameBase, DecklinkPixelFormat, DecklinkVideoFrame};
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
@@ -97,7 +96,7 @@ impl DeckLinkInputCallback for FrameCapture {
 
 fn select_input_and_format() -> Option<(
     DecklinkDevice,
-    decklink::device::input::DecklinkInputDevice,
+    blackmagic_decklink::device::input::DecklinkInputDevice,
     DecklinkDisplayMode,
 )> {
     let device = {
@@ -299,7 +298,7 @@ fn write_ppm(
 }
 
 fn main() {
-    if let Ok(version) = decklink::api_version() {
+    if let Ok(version) = blackmagic_decklink::api_version() {
         println!("DeckLink driver version: {}", version);
     } else {
         println!("Failed to get DeckLink driver version. Are the drivers installed?");

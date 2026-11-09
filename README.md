@@ -2,7 +2,7 @@
 
 Blackmagic Design Decklink SDK bindings for Rust.  
 This aims to be an easy to use and safe wrapper around the official C++ SDK.
-This makes use of a [C wrapper](https://github.com/Julusian/decklink-c) as rust does not support using some of the needed C++ directly.
+This makes use of a [C wrapper](https://github.com/luminvent/decklink-c) as rust does not support using some of the needed C++ directly.
 
 Note: This is very incomplete, but is working. The examples try to follow the official examples as closely as possible
 
