@@ -1,4 +1,5 @@
 mod audio;
+mod clock;
 mod device;
 mod enums;
 mod video;
@@ -16,6 +17,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::device::DecklinkDeviceDisplayModes;
 pub use crate::device::output::audio::{DecklinkAudioSample, DecklinkOutputDeviceAudio};
+pub use crate::device::output::clock::{DecklinkHardwareTime, DecklinkOutputHardwareClock};
 pub use crate::device::output::enums::*;
 pub use crate::device::output::video::{
     DecklinkOutputDeviceVideoScheduled, DecklinkOutputDeviceVideoSync,
@@ -79,6 +81,11 @@ impl DecklinkOutputDevice {
                 audio_active: Rc::new(AtomicBool::new(false)),
             }),
         }
+    }
+
+    /// The hardware reference clock of the device, which can be read from any thread
+    pub fn hardware_clock(&self) -> DecklinkOutputHardwareClock {
+        DecklinkOutputHardwareClock::new(self.ptr.dev)
     }
 
     /* Video Output */
